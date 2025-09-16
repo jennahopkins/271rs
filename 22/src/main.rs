@@ -1,5 +1,5 @@
 // A list of valid words, truncated for this example.
-const WORDS: [&str; 5] = ["sator", "arepo", "tenet", "opera", "rotas"];
+//let mut WORDS: [String; 5] = ["sator".to_string(), "arepo".to_string(), "tenet".to_string(), "opera".to_string(), "rotas".to_string()];
 
 // ANSI color codes for colored text
 // 31: Red, 32: Green, 33: Yellow
@@ -12,7 +12,7 @@ const T: &str = "┌───┬───┬───┬───┬───┐
 const M: &str = "├───┼───┼───┼───┼───┤";  // Middle border
 const B: &str = "└───┴───┴───┴───┴───┘";  // Bottom border
 
-fn letter(a: String, c: u64) {
+fn letter(a: char, c: u64) {
     /*
     Prints a single letter with a specified ANSI color.
 
@@ -20,7 +20,7 @@ fn letter(a: String, c: u64) {
         a: The letter to print.
         c: The ANSI color code.
     */
-    println!("| \u001b[{c}m{a}\u001b[0m ", end = "");
+    print!("| \u{001b}[{c}m{a}\u{001b}[0m ");
 }
 
 fn colors(s: String, answer: String) {
@@ -32,52 +32,64 @@ fn colors(s: String, answer: String) {
         answer: The correct answer word.
     */
     for i in 0..5 { 
-        let ch: String = s.chars().nth(i).unwrap();
-        let mut color_code: u64 = R.clone();
+        let ch: char = s.chars().nth(i).unwrap();
+        let mut color_code: u64 = R;
         if answer.chars().nth(i).unwrap() == ch {
-            color_code = G.clone();
-        } elif answer.chars().contains(ch) {
-            color_code = Y.clone();
+            color_code = G;
+        } else if answer.contains(ch) {
+            color_code = Y;
         }
         letter(ch, color_code);
+    }
     println!("|");
 }
 
-fn game(words: [&str, 6], answer: String) {
+fn game(words: [String; 6], answer: String) {
     /* Clears the screen and draws the game board with the current guesses.
     
     Args:
         words: A list of guessed words.
         answer: The correct answer word.
     */
-    println!("\u001b[2J"); // Clear the screen
-    println!("{:?}", T);
+    println!("\u{001b}[2J"); // Clear the screen
+    println!("{}", T);
     for i in 0..5 {
-        colors(words[i], answer);
-        println!("{:?}", M);
+        colors(words[i].clone(), answer.clone());
+        println!("{}", M);
     }
-    colors(words[5], answer);
-    println!("{:?}", B);
+    colors(words[5].clone(), answer.clone());
+    println!("{}", B);
 }
 
 fn main() {
     /* 
     The main game loop.
     */
-    let mut words: [&str, 6] = ["     ", "     ", "     ", "     ", "     ", "     "];
+
+    let WORDS: [String; 5] = ["sator".to_string(), "arepo".to_string(), "tenet".to_string(), "opera".to_string(), "ropas".to_string()];
+
+    let mut words: [String; 6] = ["     ".to_string(), "     ".to_string(), "     ".to_string(), "     ".to_string(), "     ".to_string(), "     ".to_string()];
+    
+    //let mut buffer = [0u8; (usize::BITS / 8) as usize];
+
+
     //import random
     //answer = random.choice(WORDS)
+    
+    let answer = String::from("sator");
 
-    let mut attempts: u64 = 0;
+    let mut attempts: usize = 0;
 
-    println!("\u001b[2J", end = ""); // Clear the screen
+    print!("\u{001b}[2J"); // Clear the screen
     println!("Use lowercase only btw.");
-    while words[5] == "     " {
+    while words[5] == "     ".to_string() {
         let mut guess = String::new();
-        std::io::stdin().read_line(&mut guess).unwrap().trim();
-        if String::from(WORDS).contains(guess) {
-            words[attempts] = guess;
-            game(words, answer);
+        std::io::stdin().read_line(&mut guess).unwrap();
+        guess = guess.trim().to_string();
+        println!("{:?}", guess);
+        if WORDS.contains(&guess) {
+            words[attempts] = guess.clone();
+            game(words.clone(), answer.clone());
             if guess == answer {
               println!("Winner!");  
               return;
