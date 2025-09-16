@@ -1,5 +1,5 @@
 // A list of valid words, truncated for this example.
-//let mut WORDS: [String; 5] = ["sator".to_string(), "arepo".to_string(), "tenet".to_string(), "opera".to_string(), "rotas".to_string()];
+const WORDS: [&str; 5] = ["sator", "arepo", "tenet", "opera", "rotas"];
 
 // ANSI color codes for colored text
 // 31: Red, 32: Green, 33: Yellow
@@ -12,6 +12,7 @@ const T: &str = "┌───┬───┬───┬───┬───┐
 const M: &str = "├───┼───┼───┼───┼───┤";  // Middle border
 const B: &str = "└───┴───┴───┴───┴───┘";  // Bottom border
 
+
 fn letter(a: char, c: u64) {
     /*
     Prints a single letter with a specified ANSI color.
@@ -23,7 +24,7 @@ fn letter(a: char, c: u64) {
     print!("| \u{001b}[{c}m{a}\u{001b}[0m ");
 }
 
-fn colors(s: String, answer: String) {
+fn colors(s: &String, answer: &String) {
     /*
      Analyzes a guessed word and prints it with the appropriate colors.
 
@@ -44,7 +45,7 @@ fn colors(s: String, answer: String) {
     println!("|");
 }
 
-fn game(words: [String; 6], answer: String) {
+fn game(words: &[String], answer: &String) {
     /* Clears the screen and draws the game board with the current guesses.
     
     Args:
@@ -53,11 +54,24 @@ fn game(words: [String; 6], answer: String) {
     */
     println!("\u{001b}[2J"); // Clear the screen
     println!("{}", T);
+
+    // printing the board's first 5 guesses
     for i in 0..5 {
-        colors(words[i].clone(), answer.clone());
+        if i < words.len() {   // a word has been guessed
+            colors(&words[i], &answer);
+        } else {    // not guessed yet
+            println!("|   |   |   |   |   |");
+        }
         println!("{}", M);
     }
-    colors(words[5].clone(), answer.clone());
+
+    // printing the 6th guess
+    if words.len() == 6 {   // last guess exists
+        colors(&words[5], &answer);
+    } else {   // not guessed yet
+        println!("|   |   |   |   |   |");
+    }
+
     println!("{}", B);
 }
 
@@ -65,10 +79,7 @@ fn main() {
     /* 
     The main game loop.
     */
-
-    let WORDS: [String; 5] = ["sator".to_string(), "arepo".to_string(), "tenet".to_string(), "opera".to_string(), "ropas".to_string()];
-
-    let mut words: [String; 6] = ["     ".to_string(), "     ".to_string(), "     ".to_string(), "     ".to_string(), "     ".to_string(), "     ".to_string()];
+    let mut words: Vec<String> = Vec::new();
     
     //let mut buffer = [0u8; (usize::BITS / 8) as usize];
 
@@ -78,27 +89,28 @@ fn main() {
     
     let answer = String::from("sator");
 
-    let mut attempts: usize = 0;
-
     print!("\u{001b}[2J"); // Clear the screen
     println!("Use lowercase only btw.");
-    while words[5] == "     ".to_string() {
+
+    while words.len() < 6 {   // there's still guesses left
+        // getting the input guess
         let mut guess = String::new();
         std::io::stdin().read_line(&mut guess).unwrap();
         guess = guess.trim().to_string();
-        println!("{:?}", guess);
-        if WORDS.contains(&guess) {
-            words[attempts] = guess.clone();
-            game(words.clone(), answer.clone());
+
+        // adding guess to vector, print board, winning logic
+        if WORDS.contains(&guess.as_str()) {
+            words.push(guess.clone());
+            game(&words, &answer);
             if guess == answer {
               println!("Winner!");  
               return;
             }
-            attempts += 1;
-        } else {
+        } else {   // guess not in WORDS array
             println!("Not a valid word!");
         }  
-    }
+
+    }   // no more guesses left
     println!("Game over :(");
 }
 
