@@ -24,6 +24,10 @@ fn letter(a: char, c: u64) {
     print!("| \u{001b}[{c}m{a}\u{001b}[0m ");
 }
 
+fn assign_greens(answer: &String, guess: &String, colors_vec: &[String], matched_index_vec: &[usize]) {
+
+}
+
 fn colors(s: &String, answer: &String) {
     /*
      Analyzes a guessed word and prints it with the appropriate colors.
@@ -32,6 +36,8 @@ fn colors(s: &String, answer: &String) {
         s: The guessed word.
         answer: The correct answer word.
     */
+    let mut color_vec: Vec<char> = vec!['R', 'R', 'R', 'R', 'R']
+
     for i in 0..5 { 
         let ch: char = s.chars().nth(i).unwrap();
         let mut color_code: u64 = R;
@@ -81,13 +87,11 @@ fn main() {
     */
     let mut words: Vec<String> = Vec::new();
     
-    //let mut buffer = [0u8; (usize::BITS / 8) as usize];
-
-
-    //import random
-    //answer = random.choice(WORDS)
-    
-    let answer = String::from("sator");
+    let mut devrnd = std::fs::File::open("/dev/urandom").unwrap();
+    let mut buffer = [0u8; (usize::BITS / 8) as usize];
+    std::io::Read::read_exact(&mut devrnd, &mut buffer).unwrap();
+    let secret = usize::from_ne_bytes(buffer);
+    let answer : String = String::from(WORDS[secret % WORDS.len()]);
 
     print!("\u{001b}[2J"); // Clear the screen
     println!("Use lowercase only btw.");
