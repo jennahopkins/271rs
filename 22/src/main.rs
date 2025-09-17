@@ -24,8 +24,24 @@ fn letter(a: char, c: u64) {
     print!("| \u{001b}[{c}m{a}\u{001b}[0m ");
 }
 
-fn assign_greens(answer: &String, guess: &String, colors_vec: &[String], matched_index_vec: &[usize]) {
+fn assign_greens(answer: &String, guess: &String, mut colors_vec: Vec<u64>, mut matched_index_vec: Vec<usize>) -> Vec<usize> {
+    for i in 0..5 {
+        if answer.chars().nth(i).unwrap() == guess.chars().nth(i).unwrap() {
+            colors_vec[i] == G;
+            matched_index_vec.push(i);
+        }
+    }
+    matched_index_vec
+}
 
+fn count_repeated_letter(answer: &String, letter: char) -> Vec<usize> {
+    let mut indexes: Vec<usize> = Vec::new();
+    let mut start = 0;
+    while let Some(id) = answer[start..].find(letter) {
+        indexes.push(start + id);
+        start = start + id + 1
+    }
+    indexes
 }
 
 fn colors(s: &String, answer: &String) {
@@ -36,9 +52,29 @@ fn colors(s: &String, answer: &String) {
         s: The guessed word.
         answer: The correct answer word.
     */
-    let mut color_vec: Vec<char> = vec!['R', 'R', 'R', 'R', 'R']
+    let mut color_vec: Vec<u64> = vec![R, R, R, R, R];
+    let mut matched_index_vec: Vec<usize> = Vec::new();
+    matched_index_vec = assign_greens(&answer, &s, color_vec.clone(), matched_index_vec);
 
-    for i in 0..5 { 
+    for i in 0..5 {
+        let ch: char = s.chars().nth(i).unwrap();
+        if answer.contains(ch) && color_vec[i] != G {
+            let mut repeat_indexes = count_repeated_letter(&answer, ch);
+            for id in repeat_indexes {
+                if ! matched_index_vec.contains(&id) {
+                    color_vec[i] = Y;
+                    matched_index_vec.push(id);
+                    break
+                }
+            }
+        }
+    }
+    for i in 0..5 {
+        letter(s.chars().nth(i).unwrap(), color_vec[i]);
+    }
+    println!("|");
+
+    /* for i in 0..5 { 
         let ch: char = s.chars().nth(i).unwrap();
         let mut color_code: u64 = R;
         if answer.chars().nth(i).unwrap() == ch {
@@ -48,7 +84,7 @@ fn colors(s: &String, answer: &String) {
         }
         letter(ch, color_code);
     }
-    println!("|");
+    println!("|"); */
 }
 
 fn game(words: &[String], answer: &String) {
