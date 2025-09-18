@@ -1,5 +1,4 @@
-// A list of valid words, truncated for this example.
-const WORDS: [&str; 5] = ["sator", "arepo", "tenet", "opera", "rotas"];
+use std::fs;
 
 // ANSI color codes for colored text
 // 31: Red, 32: Green, 33: Yellow
@@ -12,6 +11,20 @@ const T: &str = "┌───┬───┬───┬───┬───┐
 const M: &str = "├───┼───┼───┼───┼───┤";  // Middle border
 const B: &str = "└───┴───┴───┴───┴───┘";  // Bottom border
 
+fn read_wordlist() -> Vec<String> {
+    /*
+    Populate a wordlist of English words to be used in the game.
+
+    Returns:
+        Vec<String>: Vector of all valid words for the game.
+    */
+    let wordlist: Vec<String> = fs::read_to_string("words.txt")
+        .unwrap()
+        .lines()
+        .map(str::to_string)
+        .collect();
+    wordlist
+}
 
 fn print_guess(guess: &String, colors_vec: &Vec<u64>) {
     /*
@@ -131,6 +144,7 @@ fn main() {
     /* 
     The main game loop.
     */
+    let wordlist: Vec<String> = read_wordlist();
     let mut words: Vec<String> = Vec::new();
     
     // selecting a random word as the answer
@@ -138,19 +152,19 @@ fn main() {
     let mut buffer = [0u8; (usize::BITS / 8) as usize];
     std::io::Read::read_exact(&mut devrnd, &mut buffer).unwrap();
     let secret = usize::from_ne_bytes(buffer);
-    let answer: String = String::from(WORDS[secret % WORDS.len()]);
+    let answer: String = String::from(wordlist[secret % wordlist.len()].clone());
 
     print!("\u{001b}[2J"); // Clear the screen
-    println!("Use lowercase only btw.");
+    println!("Welcome to Wordle! All standard rules apply. Word list from https://github.com/tabatkins/wordle-list.git.");
 
     while words.len() < 6 {   // there's still guesses left
         // getting the input guess
         let mut guess = String::new();
         std::io::stdin().read_line(&mut guess).unwrap();
-        guess = guess.trim().to_string();
+        guess = guess.trim().to_string().to_lowercase();
 
         // adding guess to vector, print board, winning logic
-        if WORDS.contains(&guess.as_str()) {
+        if wordlist.contains(&guess) {
             words.push(guess.clone());
             game(&words, &answer);
             if guess == answer {
@@ -163,5 +177,6 @@ fn main() {
 
     }   // no more guesses left
     println!("Game over :(");
+    println!("The word was {answer}.");
 }
 
