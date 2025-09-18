@@ -13,7 +13,7 @@ const M: &str = "├───┼───┼───┼───┼───┤
 const B: &str = "└───┴───┴───┴───┴───┘";  // Bottom border
 
 
-fn letter(a: char, c: u64) {
+fn print_guess(guess: &String, colors_vec: &Vec<u64>) {
     /*
     Prints a single letter with a specified ANSI color.
 
@@ -21,70 +21,80 @@ fn letter(a: char, c: u64) {
         a: The letter to print.
         c: The ANSI color code.
     */
-    print!("| \u{001b}[{c}m{a}\u{001b}[0m ");
+    for i in 0..5 {
+        let ch: char = guess.chars().nth(i).unwrap();
+        let c: u64 = colors_vec[i];
+        print!("| \u{001b}[{c}m{ch}\u{001b}[0m ");
+    }
+    println!("|");
 }
 
-fn assign_greens(answer: &String, guess: &String, mut colors_vec: Vec<u64>, mut matched_index_vec: Vec<usize>) -> Vec<usize> {
+fn assign_greens(answer: &String, guess: &String, colors_vec: &mut Vec<u64>, matched_index_vec: &mut Vec<usize>) {
+    /*
+    Finds which letters in the user's guess should be green.
+
+    Args:
+        answer: The correct word the user is trying to guess.
+        guess: The most recent word the user guessed.
+        colors_vec: Vector holding the colors each letter in the guess are.
+        matched_index_vec: Which indexes in the answer are matched with a color
+    */
     for i in 0..5 {
         if answer.chars().nth(i).unwrap() == guess.chars().nth(i).unwrap() {
-            colors_vec[i] == G;
+            colors_vec[i] = G;
             matched_index_vec.push(i);
         }
     }
-    matched_index_vec
 }
 
 fn count_repeated_letter(answer: &String, letter: char) -> Vec<usize> {
+    /*
+    Finds the indexes of a repeated letter in a word.
+
+    Args:
+        answer: The correct word the user is trying to guess.
+        letter: Letter whose repeats are tracked.
+
+    Returns:
+        Vec<usize>: Which indexes the letter appears in the word.
+    */
     let mut indexes: Vec<usize> = Vec::new();
     let mut start = 0;
     while let Some(id) = answer[start..].find(letter) {
         indexes.push(start + id);
-        start = start + id + 1
+        start = start + id + 1;
     }
     indexes
 }
 
-fn colors(s: &String, answer: &String) {
+fn colors(guess: &String, answer: &String) {
     /*
      Analyzes a guessed word and prints it with the appropriate colors.
 
      Args:
-        s: The guessed word.
+        guess: The guessed word.
         answer: The correct answer word.
     */
-    let mut color_vec: Vec<u64> = vec![R, R, R, R, R];
+    let mut colors_vec: Vec<u64> = vec![R, R, R, R, R];
     let mut matched_index_vec: Vec<usize> = Vec::new();
-    matched_index_vec = assign_greens(&answer, &s, color_vec.clone(), matched_index_vec);
+    assign_greens(&answer, &guess, &mut colors_vec, &mut matched_index_vec);
 
+    // logic for assigning yellows
     for i in 0..5 {
-        let ch: char = s.chars().nth(i).unwrap();
-        if answer.contains(ch) && color_vec[i] != G {
-            let mut repeat_indexes = count_repeated_letter(&answer, ch);
+        let ch: char = guess.chars().nth(i).unwrap();
+        if answer.contains(ch) && colors_vec[i] != G {
+            let repeat_indexes = count_repeated_letter(&answer, ch);
             for id in repeat_indexes {
                 if ! matched_index_vec.contains(&id) {
-                    color_vec[i] = Y;
+                    // index has not been assigned green or yellow yet
+                    colors_vec[i] = Y;
                     matched_index_vec.push(id);
-                    break
+                    break; // only want one yellow to be matched to this index
                 }
             }
         }
     }
-    for i in 0..5 {
-        letter(s.chars().nth(i).unwrap(), color_vec[i]);
-    }
-    println!("|");
-
-    /* for i in 0..5 { 
-        let ch: char = s.chars().nth(i).unwrap();
-        let mut color_code: u64 = R;
-        if answer.chars().nth(i).unwrap() == ch {
-            color_code = G;
-        } else if answer.contains(ch) {
-            color_code = Y;
-        }
-        letter(ch, color_code);
-    }
-    println!("|"); */
+    print_guess(&guess, &colors_vec);
 }
 
 fn game(words: &[String], answer: &String) {
@@ -123,11 +133,12 @@ fn main() {
     */
     let mut words: Vec<String> = Vec::new();
     
+    // selecting a random word as the answer
     let mut devrnd = std::fs::File::open("/dev/urandom").unwrap();
     let mut buffer = [0u8; (usize::BITS / 8) as usize];
     std::io::Read::read_exact(&mut devrnd, &mut buffer).unwrap();
     let secret = usize::from_ne_bytes(buffer);
-    let answer : String = String::from(WORDS[secret % WORDS.len()]);
+    let answer: String = String::from(WORDS[secret % WORDS.len()]);
 
     print!("\u{001b}[2J"); // Clear the screen
     println!("Use lowercase only btw.");
