@@ -11,20 +11,12 @@ fn main() {
         }
         val += 2;
     }
-    for j in [2, 3, 5, 7, 11, 13, 15, 17, 19] {
+    let num = constants(2 as u64);
+    println!("sqrt(2) = {:016x}", num);
+    /*for j in [2, 3, 5, 7, 11, 13, 15, 17, 19] {
         let num = constants(j as u64);
         println!("sqrt({j}) = {:016x}", num);
-    }
-    /*
-    println!("sqrt(02) = {}", constants(2 as u64)); // 01fffffffa7a8770a4
-    println!("sqrt(03) = {}", constants(3 as u64)); // 02fffffff746605709
-    println!("sqrt(05) = {}", constants(5 as u64)); // 04fffffff29bbdd100
-    println!("sqrt(07) = {}", constants(7 as u64)); // 06ffffffee28d451d1
-    println!("sqrt(11) = {}", constants(11 as u64)); // 0affffffe79823ac10
-    println!("sqrt(13) = {}", constants(13 as u64)); // 0cffffffe1effec840
-    println!("sqrt(17) = {}", constants(17 as u64)); // 10ffffffd6ebf68af1
-    println!("sqrt(19) = {}", constants(19 as u64)); // 12ffffffd3bf490990
-    */
+    }*/
 }
 
 fn is_prime(n: u64) -> bool {
@@ -47,27 +39,31 @@ fn is_prime(n: u64) -> bool {
 }
 
 fn constants(x: u64) -> u64{
-    let root: f64 = f64::sqrt(x as f64);
-    let int = root as u64;
-    let frac_part = root - int as f64;
+    // main question: where do i convert to u32???
 
-    let mut approx = (frac_part * (1u128 << 64) as f64) as u64;
-    approx = (approx >> 32) << 32;
-    let target = ((x as u128 - 1) << 64) | 0xffff_ffff_ffff_ffff;
+    let root: f32 = f64::sqrt(x as f64) as f32; // f64::sqrt
+    let int = root as u32; // getting the int part
+    let frac_part = root - int as f32; // getting the fractional
+    println!("frac_part: {frac_part}");
+    let fractional: f32 = frac_part * (2_f32.powf(32.0)); // express it in 32 bits
+    println!("fractional: {fractional}");
+    let mut approx = fractional as u32; // convert to integer type
+    println!("approx: {approx:b}");
+
+    // for every of the bits in approx starting with greatest placevalue
     for i in (0..32).rev() {
-        let one_bit = 1u64 << i;
-        if approx & one_bit == 0 {
-            let candidate = approx | one_bit;
-            let square = (candidate as u128) * (candidate as u128);
-            println!(
-            "i {:2}: trying {:016x}, square = {:032x}, target = {:032x}",
-            i, candidate, square, target
-            );
-
-            if square <= target {
-                approx = candidate;
+        let one = 1u32 << i; // the one is in the placevalue targeted
+        if approx & one == 0 { // there is a 0 in this placevalue of approx
+            let candidate = approx | one; // changing the 0 to a 1
+            let square = (candidate as u128) * (candidate as u128); // squaring the candidate as a u128
+            if square <= 0x0000000000000000ffffffffffffffff { // if no overflow
+                approx = candidate; // keep the one
             }
+            println!(
+                "i {:2}: candidate {:016x}, square = {:016x}",
+                i, candidate, square
+                );
         }
     }
-    return approx;
+    return (approx as u128 * approx as u128) as u64;
 }
