@@ -39,7 +39,6 @@ fn is_prime(n: u64) -> bool {
 }
 
 fn constants(x: u64) -> u64{
-    // main question: where do i convert to u32???
 
     let root: f32 = f64::sqrt(x as f64) as f32; // f64::sqrt
     let int = root as u32; // getting the int part
