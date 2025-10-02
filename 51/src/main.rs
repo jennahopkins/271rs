@@ -2,6 +2,7 @@ fn main() {
     let n: i32 = 3;
     let x = i32_to_f16(n);
     println!("{:?}", x);
+    println!("{:b}", x)
 }
 
 fn i32_to_f16(n: i32) -> f16::f16 {
@@ -34,6 +35,6 @@ fn i32_to_f16(n: i32) -> f16::f16 {
     return x;
 }
 
-// fn println_f16(x: f16) {
-
-// }
+//fn println_f16(x) {
+    //println!("{:b}", x)
+//}
