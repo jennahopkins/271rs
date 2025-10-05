@@ -36,55 +36,100 @@ const CONSTANTS: [u64; 80] = [
 
 
 fn main() {
+    /*
+    Main function to read a file and compute its SHA-512 hash.
+        Expects a command-line argument for the filename to hash.
+        Prints the SHA-512 hash in hexadecimal format followed by the filename.
+     */
     let args: Vec<String> = env::args().collect();
-    let filename = &args[1];
-    let data = fs::read(filename).unwrap();
+    let filename: &String = &args[1];
+    let data: Vec<u8> = fs::read(filename).unwrap();
 
-    let digest = sha512(&data);
+    let digest: [u8; 64] = sha512(&data);
     for byte in &digest {
         print!("{:02x}", byte);
     }
-    println!();
+    println!("  {}", filename);
 }
 
 fn sha512(text: &[u8]) -> [u8; 64] {
+    /*
+    Main function to compute the SHA-512 hash of the input text.
+    Args:
+        text: input message as a byte slice
+    Returns:
+        64-byte array representing the SHA-512 digest
+    */
     let mut w: [u64; 80] = [0u64; 80];
-
-    let mut block: [u8; 128] = [0u8; 128];
-    let bitlen: usize = text.len() * 8;
     let mut state: [u64; 8] = HASHES;
-    let length: usize = text.len();
+    let bitlen: u128 = (text.len() as u128) * 8;
     let mut offset: usize = 0;
-    while offset < length {
-        let block_size: usize = if (length - offset) < 128 {length - offset} else {128};
-        block = [0u8; 128];
-        block[..block_size].copy_from_slice(&text[offset..offset + block_size]);
 
-        if block_size < 128 {
-            block[block_size] = 0x80;
-            if block_size < 112 {
-                for i in 0..8 {
-                    block[112 + i] = ((bitlen >> ((7 - i) * 8)) & 0xFF) as u8;
-                }
-            }
+    // process all full blocks of the message
+    while offset + 128 <= text.len() {
+        let mut block: [u8; 128] = [0u8; 128];
+        block.copy_from_slice(&text[offset..offset + 128]);
+        sha512_compress(&mut w, &mut state, block);
+        offset += 128;
+    }
+
+    // handle the final partial block(s)
+    let mut block: [u8; 128] = [0u8; 128];
+    let remaining: &[u8] = &text[offset..];
+    let rem_len: usize = remaining.len();
+
+    // copy the remaining bytes and append the '1' bit
+    block[..rem_len].copy_from_slice(remaining);
+    block[rem_len] = 0x80;
+
+    if rem_len < 112 {
+        // there's enough space for length in this block; zero bytes after the 1 to 112 then add length, and process
+        for i in (rem_len + 1)..112 {
+            block[i] = 0;
         }
 
+        for i in 0..16 {
+            block[112 + i] = ((bitlen >> (8 * (15 - i))) & 0xFF) as u8;
+        }
+        sha512_compress(&mut w, &mut state, block);
+    } else {
+        // not enough space for length in this block, zero the rest and process
+        for i in (rem_len + 1)..128 {
+            block[i] = 0;
+        }
         sha512_compress(&mut w, &mut state, block);
 
-        offset += block_size;
+        // process a second block to fit length at the end
+        let mut block2: [u8; 128] = [0u8; 128];
+        for i in 0..16 {
+            block2[112 + i] = ((bitlen >> (8 * (15 - i))) & 0xFF) as u8;
+        }
+        sha512_compress(&mut w, &mut state, block2);
     }
-    
+
+    // produce final digest bytes from state
     let mut digest: [u8; 64] = [0u8; 64];
     for (i, word) in state.iter().enumerate() {
         digest[i * 8..(i + 1) * 8].copy_from_slice(&word.to_be_bytes());
     }
 
     return digest;
+
 }
 
 fn sha512_compress(w: &mut [u64; 80], state: &mut [u64; 8], block: [u8; 128]) {
+    /*
+    Helper function to process a single 1024-bit block.
+
+    Args:
+        w: mutable reference to the message schedule array (80 u64 words)
+        state: mutable reference to the current hash state (8 u64 words)
+        block: 128-byte array representing the 1024-bit message block
+     */
     let mut temp1: u64;
     let mut temp2: u64;
+
+    // prepare the message schedule
     for i in 0..16 {
         w[i] = ((block[i * 8] as u64) << 56) |
                ((block[i * 8 + 1] as u64) << 48) |
@@ -96,6 +141,7 @@ fn sha512_compress(w: &mut [u64; 80], state: &mut [u64; 8], block: [u8; 128]) {
                (block[i * 8 + 7] as u64);
     };
 
+    // extend the first 16 words into the remaining 64 words w[16..79] of the message schedule array
     for i in 16..80 {
         w[i] = sigma1(w[i - 2]) + 
             w[i - 7] + 
@@ -103,15 +149,17 @@ fn sha512_compress(w: &mut [u64; 80], state: &mut [u64; 8], block: [u8; 128]) {
             w[i - 16];
     }
 
-    let mut a = state[0];
-    let mut b = state[1];
-    let mut c = state[2];
-    let mut d = state[3];
-    let mut e = state[4];
-    let mut f = state[5];
-    let mut g = state[6];
-    let mut h = state[7];
+    // initialize working variables to current hash value
+    let mut a: u64 = state[0];
+    let mut b: u64 = state[1];
+    let mut c: u64 = state[2];
+    let mut d: u64 = state[3];
+    let mut e: u64 = state[4];
+    let mut f: u64 = state[5];
+    let mut g: u64 = state[6];
+    let mut h: u64 = state[7];
 
+    // compression hash function main loop, 80 rounds
     for i in 0..80 {
         temp1 = h + Sigma1(e) + choice(e, f, g) + CONSTANTS[i] + w[i];
         temp2 = Sigma0(a) + median(a, b, c);
@@ -125,6 +173,7 @@ fn sha512_compress(w: &mut [u64; 80], state: &mut [u64; 8], block: [u8; 128]) {
         a = temp1 + temp2;
     }
 
+    // add the compressed chunk to the current hash value
     state[0] += a;
     state[1] += b;
     state[2] += c;
@@ -137,25 +186,31 @@ fn sha512_compress(w: &mut [u64; 80], state: &mut [u64; 8], block: [u8; 128]) {
 
 
 fn Sigma0 (x: u64) -> u64 {
+    /* helper function to mix parts of the current hash state to help spread changes */
     return x.rotate_right(28) ^ x.rotate_right(34) ^ x.rotate_right(39);
 }
 
 fn Sigma1 (x: u64) -> u64 {
+    /* helper function to add more mixing to the hash state for stronger security */
     return x.rotate_right(14) ^ x.rotate_right(18) ^ x.rotate_right(41);
 }
 
 fn sigma0 (x: u64) -> u64 {
+    /* helper function to scramble earlier message words to prepare for hashing */
     return x.rotate_right(1) ^ x.rotate_right(8) ^ (x >> 7);
 }
 
 fn sigma1 (x: u64) -> u64 {
+    /* helper function to mixe up message words for better randomness in the schedule */
     return x.rotate_right(19) ^ x.rotate_right(61) ^ (x >> 6);
 }
 
 fn choice (x: u64, y: u64, z: u64) -> u64 {
+    /* helper function to compute the choice function */
     return (x & y) ^ ((!x) & z);
 }
 
 fn median (x: u64, y: u64, z: u64) -> u64 {
+    /* helper function to compute the median function */
     return (x & y) ^ (x & z) ^ (y & z);
 }
