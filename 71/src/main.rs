@@ -3,7 +3,7 @@ use numerical::*;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    //let args: Vec<String> = Vec::from([String::from("0x5"), String::from("0x3"), String::from("SUB")]);
+    //let args: Vec<String> = Vec::from([String::from("0x930de8a4f1dde8b1c7258"), String::from("0x930de8a4f1dde8b1c7258"), String::from("ADD")]);
     let a = h2i_ix(&args[1]);
     let b = h2i_ix(&args[2]);
     match args[3].as_str() {
@@ -40,7 +40,7 @@ fn h2i_ix(h: &str) -> ix {
         let value = u64::from_str_radix(chunk_str, 16).unwrap();
         values.push(value); // Push in LSB to MSB order
     }
-    //values.reverse(); // Reverse to MSB to LSB order
+    values.reverse(); // Reverse to MSB to LSB order
 
     let ix_inst = ix {
         sign: true,
@@ -58,7 +58,7 @@ fn see_ix(x: &ix) {
      */
     let mut result = String::new();
 
-    for (i, &val) in x.vals.iter().rev().enumerate() {
+    for (i, &val) in x.vals.iter().enumerate() {
         if i == 0 {
             // Most significant chunk — no leading zeros
             result += &format!("{:X}", val);
@@ -67,5 +67,5 @@ fn see_ix(x: &ix) {
             result += &format!("{:016X}", val);
         }
     }
-    println!("{}", result);
+    println!("{}{}", if x.sign { "" } else { "-" }, result);
 }
