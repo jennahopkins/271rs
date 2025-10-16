@@ -3,7 +3,6 @@ use numerical::*;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    //let args: Vec<String> = Vec::from([String::from("0x930de8a4f1dde8b1c7258"), String::from("0x930de8a4f1dde8b1c7258"), String::from("ADD")]);
     let a = h2i_ix(&args[1]);
     let b = h2i_ix(&args[2]);
     match args[3].as_str() {
@@ -26,6 +25,7 @@ fn h2i_ix(h: &str) -> ix {
      */
     let hex = h.trim_start_matches("0x").trim_start_matches("0X");
     let mut hex = hex.to_string();
+
     // Pad so length is a multiple of 16
     let rem = hex.len() % 16;
     if rem != 0 {
@@ -34,19 +34,18 @@ fn h2i_ix(h: &str) -> ix {
     }
 
     let mut values: Vec<u64> = Vec::new();
-
+    // break into 16-char chunks and convert to u64 starting from least significant
     for chunk in hex.as_bytes().rchunks(16) {
         let chunk_str = std::str::from_utf8(chunk).unwrap();
         let value = u64::from_str_radix(chunk_str, 16).unwrap();
-        values.push(value); // Push in LSB to MSB order
+        values.push(value); // push in LSB to MSB order
     }
-    values.reverse(); // Reverse to MSB to LSB order
+    values.reverse(); // reverse to MSB to LSB order
 
     let ix_inst = ix {
         sign: true,
         vals: values,
     };
-
     ix_inst
 }
 
