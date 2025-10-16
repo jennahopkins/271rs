@@ -56,11 +56,16 @@ pub fn sub_ix(a: &ix, b: &ix) -> ix {
     };
     return add_ix(&a, &b);
 }
-/* 
-pub fn mul_ix(_a: &ix, _b: &ix) -> ix {
+
+pub fn mul_ix(a: &ix, b: &ix) -> ix {
     // multiply two ix numbers
-    
-} */
+    let vec: Vec<u64> = mul_mag(&a.vals, &b.vals);
+    return ix {
+        sign: if a.sign == b.sign { true } else { false },
+        vals: vec,
+    };
+}
+
 fn add_mag(aug_vals: &Vec<u64>, add_vals: &Vec<u64>) -> Vec<u64> {
     /*
     Addition of two magnitudes.
@@ -150,4 +155,36 @@ fn gte_mag(a_vals: &Vec<u64>, b_vals: &Vec<u64>) -> bool {
         }
     }
     return true; // they are equal
+}
+
+fn mul_mag(a_vals: &Vec<u64>, b_vals: &Vec<u64>) -> Vec<u64> {
+    /*
+    Multiplication of two magnitudes using long multiplication.
+
+    Args:
+        a_vals: u64 vector chunk values of the first number
+        b_vals: u64 vector chunk values of the second number
+
+    Returns:
+        Vec<u64>: resulting u64 vector chunk values after multiplication
+     */
+    let mut result: Vec<u64> = vec![0u64; a_vals.len() + b_vals.len()]; // max possible length
+
+    // iterate over each chunk from least significant to most significant
+    for (i, &aval) in a_vals.iter().rev().enumerate() {
+        let mut carry = 0u128;
+        for (j, &bval) in b_vals.iter().rev().enumerate() {
+            let idx = result.len() - 1 - (i + j); // index to keep track of significance
+            let prod: u128 = (aval as u128) * (bval as u128) + (result[idx] as u128) + carry;
+            result[idx] = (prod & 0xFFFFFFFFFFFFFFFF) as u64; // store lower 64 bits
+            carry = prod >> 64; // carry upper bits
+        }
+        // if there's any remaining carry, add it to the next chunk
+        if carry > 0 {
+            let idx = result.len() - 1 - (i + b_vals.len());
+            result[idx] = result[idx].wrapping_add(carry as u64);
+        }
+    }
+
+    result
 }

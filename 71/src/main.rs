@@ -8,8 +8,8 @@ fn main() {
     match args[3].as_str() {
         "ADD" => see_ix(&add_ix(&a, &b)),
         "SUB" => see_ix(&sub_ix(&a, &b)),
-        /*"MUL" => see_ix(&mul_ix(&a, &b)),
-        "DIV" => todo!(),
+        "MUL" => see_ix(&mul_ix(&a, &b)),
+        /*"DIV" => todo!(),
         "REM" => todo!(),*/
         &_    => println!("Operator not recognized: choose from ADD, SUB, MUL, DIV, REM"),
     }

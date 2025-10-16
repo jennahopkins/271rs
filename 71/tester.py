@@ -12,7 +12,7 @@ print(f"\nhexone: {hexone}", f"\nhextwo: {hextwo}")
 
 from operator import add, sub, mul, floordiv as quo, mod as rem
 #ops = {'ADD':add,'SUB':sub,'MUL':mul,'QUO':quo,'REM':rem}
-ops = {"ADD":add,"SUB":sub}
+ops = {"ADD": add,"SUB": sub, "MUL": mul}
 for op in ops:
     result = int(subprocess.check_output(["cargo", "run", hexone, hextwo, op]),16)
     answer = ops[op](bigone,bigtwo)
