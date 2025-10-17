@@ -9,8 +9,8 @@ fn main() {
         "ADD" => see_ix(&add_ix(&a, &b)),
         "SUB" => see_ix(&sub_ix(&a, &b)),
         "MUL" => see_ix(&mul_ix(&a, &b)),
-        /*"DIV" => todo!(),
-        "REM" => todo!(),*/
+        "DIV" => see_ix(&div_ix(&a, &b)),
+        "REM" => see_ix(&rem_ix(&a, &b)),
         &_    => println!("Operator not recognized: choose from ADD, SUB, MUL, DIV, REM"),
     }
 }
