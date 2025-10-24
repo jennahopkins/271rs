@@ -1,4 +1,5 @@
-use num::*;
+use std::num;
+use ed25519::*;
 use num_bigint::BigInt;
 use num_traits::Euclid;
 
