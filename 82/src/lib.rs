@@ -108,10 +108,11 @@ fn encodepoint(p: &Vec<BigInt>, b: usize) -> Vec<u8> {
 
 pub fn publickey(sk: &[u8], b: usize, q: &BigInt, d: &BigInt, b_point: &Vec<BigInt>) -> Vec<u8> {
     let h = h(sk);  // h is bytes
-    let a = BigInt::from(2_i32.pow((b - 2) as u32));
+    let a = BigInt::from(1) << (b - 2);
     let mut sum = BigInt::zero();
     for i in 3..(b - 2) {
-        sum += BigInt::from(2_i32.pow(i as u32)) * BigInt::from(bit(&h, i));
+        sum += (BigInt::from(1) << i) * BigInt::from(bit(&h, i));
+        //sum += BigInt::from(2_i32.pow(i as u32)) * BigInt::from(bit(&h, i));
     }
     let big_a = scalarmult(b_point, &a, q, d);
     return encodepoint(&big_a, b);
@@ -121,7 +122,7 @@ fn hint(m: &[u8], b: usize) -> BigInt {
     let h = h(m);  // h is bytes
     let mut sum = BigInt::zero();
     for i in 0..(2 * b) {
-        sum += BigInt::from(2_i32.pow(i as u32)) * BigInt::from(bit(&h, i));
+        sum += (BigInt::from(1) << i) * BigInt::from(bit(&h, i));
     }
     return sum;
 }
@@ -156,7 +157,7 @@ fn isoncurve(p: &Vec<BigInt>, q: &BigInt, d: &BigInt) -> bool {
 fn decodeint(s: &[u8], b: usize) -> BigInt {
     let mut sum = BigInt::zero();
     for i in 0..b {
-        sum += BigInt::from(2_i32.pow(i as u32)) * BigInt::from(bit(s, i));
+        sum += (BigInt::from(1) << i) * BigInt::from(bit(s, i));
     }
     return sum;
 }
@@ -164,7 +165,7 @@ fn decodeint(s: &[u8], b: usize) -> BigInt {
 fn decodepoint(s: &[u8], b: usize, q: &BigInt, d: &BigInt) -> Vec<BigInt> {
     let mut y = BigInt::zero();
     for i in 0..(b - 1) {
-        y += BigInt::from(2_i32.pow(i as u32)) * BigInt::from(bit(s, i));
+        y += (BigInt::from(1) << i) * BigInt::from(bit(s, i));
     }
     let mut x = xrecover(&y, q, d, &BigInt::one());
     if (x.clone() & BigInt::one()) != bit(s, b - 1).into() {
